@@ -1,0 +1,4 @@
+id,color,immatriculation,numero_ordre,code_securite,code_alpha,code_region,nom,prenom,profession,ville,province,adresse,genre,marque,numero_serie,carrosserie,type,modele,energie,puissance_administrative,charge_utile,ptac,ptra,capacite,nombre_places,date_mise_circulation,date_carte_precedente,immatriculation_precedente,declaration_perte,date_creation
+1,black,46166F03,4616,0,6F,03,KABORE,SEGNOGO NOUROUDINE,ETUDIANT,OUAGADOUGOU,KADIOGO,SECTEUR 19,MOTOCYCLE,YAMAHA,RLCS5C6H0GY248501,MOTO SOLO,110,SIRIUS,ESSENCE,1,160,235,NULL,NULL,2,2017-08-31,NULL,NULL,OUI,0000-00-00
+2,silver,9563D403,9563,4,D4,3,ILBOUDOU,KADER,ETUDIANT,OUAGADOUGOU,KADIOGO,SECTEUR 17,VOITURE,TOYOTA,CVLS7CFVGAL,SOLO,120,D150,ESSENCE,2,200,241,NULL,NULL,4,2012-08-05,NULL,NULL,NON,1996-08-20
+3,white,9804D411,9804,5,D4,11,NIKIAMA,RODRIGUE,ETUDIANT,OUAGADOUGOU,KADIOGO,SECTEUR 18,VOITURE,TOYOTA,AFFFSFSFCFF,SRV,230,H4,ESSENCE,3,300,586,NULL,NULL,4,2020-07-05,NULL,NULL,NON,2020-00-20

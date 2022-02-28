@@ -16,6 +16,51 @@ from PIL import Image, ImageFont, ImageDraw, ImageEnhance
 
 
 import requests
+import streamlit as st
+import pandas as pd
+from webcam import webcam
+
+# Security
+#passlib,hashlib,bcrypt,scrypt
+import hashlib
+def make_hashes(password):
+	return hashlib.sha256(str.encode(password)).hexdigest()
+
+def check_hashes(password,hashed_text):
+	if make_hashes(password) == hashed_text:
+		return hashed_text
+	return False
+# DB Management
+import sqlite3
+conn = sqlite3.connect('data.db')
+c = conn.cursor()
+# DB  Functions
+def create_usertable():
+	c.execute('CREATE TABLE IF NOT EXISTS userstable(username TEXT,password TEXT)')
+
+
+def add_userdata(username,password):
+	c.execute('INSERT INTO userstable(username,password) VALUES (?,?)',(username,password))
+	conn.commit()
+
+def login_user(username,password):
+	c.execute('SELECT * FROM userstable WHERE username =? AND password = ?',(username,password))
+	data = c.fetchall()
+	return data
+
+
+def view_all_users():
+	c.execute('SELECT * FROM userstable')
+	data = c.fetchall()
+	return data
+
+
+
+
+
+
+
+
 
 
 def parse_arguments(args_hook=lambda _: _):
@@ -172,55 +217,264 @@ def main():
 
 
     st.title("reconnaissance de plaque d'immatriculation 🇧🇫")
+    a = st.selectbox("Select : ",["Upload Image","Real Time Picture"])
+    if a =="Upload Image":
+        img_file_buffer = st.file_uploader("Image de véhicule", type=["png", "jpg", "jpeg"])
+        if img_file_buffer is not None:
+            file_details = {"FileName": img_file_buffer.name, "FileType": img_file_buffer.type}
+
+            with open(os.path.join("./tempDir", "input.png"), "wb") as f:
+                f.write(img_file_buffer.getbuffer())
+        c = st.columns(10)
+        test = c[4].button("Detecter")
+
+        if test:
+            try:
+
+                paths = ["./tempDir/input.png"]
+
+                results = []
+                engine_config = {}
+
+
+                for path in paths:
+                    with open(path, 'rb') as fp:
+                        api_res = recognition_api(fp,api_key="e2a60c10d2155f1df725c594c5605d6d63a2764c")
+
+                    results.append(api_res)
+                    time_exec = json.dumps(results[0]["processing_time"], indent=2)
+                    plate_number = json.dumps(results[0]["results"][0]["plate"], indent=2)
+                    boxes = json.dumps(results[0]["results"][0]["box"], indent=2)
+                    boxes = ast.literal_eval(boxes)
+                    c = st.columns(2)
+                    xmin,ymin,xmax,ymax = boxes["xmin"],boxes["ymin"],boxes["xmax"],boxes["ymax"]
+                    source_img = Image.open("./tempDir/input.png").convert("RGBA")
+                    # font_type = ImageFont.truetype("Arial.ttf", 18)
+                    draw = ImageDraw.Draw(source_img)
+                    draw.rectangle(((xmin, ymin), (xmax, ymax)), outline=(0, 255, 0), width=3)
+                    draw.text((xmin - 5, ymin - 10), "Matricule", fill=(0, 255, 0))
+
+                    source_img.save("./tempDir/input.png", "PNG")
+                    im = Image.open("tempDir/input.png")
+                    im = im.resize((300,400))
+                    c[0].image(im)
+
+                    plate_number = plate_number.replace('"',"")
+                    c[1].subheader("Numero De Matricule:")
+                    c[1].text(plate_number.upper())
+
+                    c[1].subheader("Numero D'Ordre:")
+                    c[1].text(plate_number[:4].upper())
+
+                    c[1].subheader("Code Alpha:")
+                    c[1].text(plate_number[4:6].upper())
+
+                    c[1].subheader("Code Région:")
+                    c[1].text(plate_number[6:].upper())
+                    db = pd.read_csv("datasets.csv")
+                    mats = db["immatriculation"].values
+                    plate_number = plate_number.upper()
+
+
+
+
+                    with st.expander("Additional Informations"):
+                        if plate_number in mats:
+
+                            st.markdown('___')
+                            c = st.columns(2)
+                            c[0].markdown("<h3>Informations Vehicules</h3>",unsafe_allow_html=True)
+                            c[0].markdown(f"**Genre**: {db[db['immatriculation']==plate_number]['genre'].values[0]}")
+                            c[0].markdown(f"**Marque**: {db[db['immatriculation']==plate_number]['marque'].values[0]}")
+                            c[0].markdown(f"**Color**: {db[db['immatriculation']==plate_number]['color'].values[0]}")
+
+
+                            c[1].markdown("<h3>Informations Proprietaire</h3>",unsafe_allow_html=True)
+                            c[1].markdown(f"**Nom**: {db[db['immatriculation'] == plate_number]['nom'].values[0]}")
+                            c[1].markdown(f"**Prenom**: {db[db['immatriculation'] == plate_number]['prenom'].values[0]}")
+                            c[1].markdown(f"**Profession**: {db[db['immatriculation'] == plate_number]['profession'].values[0]}")
+                            c[1].markdown(f"**Ville**: {db[db['immatriculation'] == plate_number]['ville'].values[0]}")
+                            c[1].markdown(f"**Province**: {db[db['immatriculation'] == plate_number]['province'].values[0]}")
+                            c[1].markdown(f"**Adresse**: {db[db['immatriculation'] == plate_number]['adresse'].values[0]}")
+
+                            st.subheader("")
+                            c = st.columns(3)
+                            c[1].markdown("Declarée Predu:")
+                            if db[db['immatriculation'] == plate_number]['declaration_perte'].values[0]=="OUI":
+                                c[2].markdown("❌")
+                            else:
+                                c[2].markdown("✔️")
+                            st.markdown('___')
+                            c = st.columns(3)
+                            c[0].markdown("<h5>Infos Visite Technique</h5>", unsafe_allow_html=True)
+                            c[0].markdown(f"**Puissance**: {db[db['immatriculation'] == plate_number]['puissance_administrative'].values[0]}")
+                            c[0].markdown(f"**Charge Utile**: {db[db['immatriculation'] == plate_number]['charge_utile'].values[0]}")
+                            c[0].markdown(f"**PTAC**: {db[db['immatriculation'] == plate_number]['ptac'].values[0]}")
+                            c[0].markdown(f"**PTRA**: {db[db['immatriculation'] == plate_number]['ptra'].values[0]}")
+                            c[0].markdown(f"**Capacite**: {db[db['immatriculation'] == plate_number]['capacite'].values[0]}")
+
+                            c[1].markdown("<h5>Infos Assurance</h5>", unsafe_allow_html=True)
+                            c[1].markdown(f"**N° Serie**: {db[db['immatriculation'] == plate_number]['numero_serie'].values[0]}")
+                            c[1].markdown(f"**Carosserie**: {db[db['immatriculation'] == plate_number]['carrosserie'].values[0]}")
+                            c[1].markdown(f"**Type**: {db[db['immatriculation'] == plate_number]['type'].values[0]}")
+                            c[1].markdown(f"**Modele**: {db[db['immatriculation'] == plate_number]['modele'].values[0]}")
+                            c[1].markdown(f"**Energie**: {db[db['immatriculation'] == plate_number]['energie'].values[0]}")
+
+                            c[2].markdown("<h5>Infos Permis de Conduite</h5>", unsafe_allow_html=True)
+                            c[2].markdown(f"**Nombre Place**: {db[db['immatriculation'] == plate_number]['nombre_places'].values[0]}")
+                            c[2].markdown(f"**Date M° Circulation**: {db[db['immatriculation'] == plate_number]['date_mise_circulation'].values[0]}")
+                        else:
+                            st.warning("This Vehicule Not registred!")
+            except:
+                st.warning("Retry...")
+    else:
+        captured_image = webcam()
+        if captured_image is None:
+            st.write("Waiting for capture...")
+        else:
+            st.write("Got an image from the webcam:")
+            captured_image.save("./tempDir/input.png")
+            c = st.columns(10)
+            test = c[4].button("Detecter")
+            if test:
+                try:
+
+                        paths = ["./tempDir/input.png"]
+
+                        results = []
+                        engine_config = {}
+
+                        for path in paths:
+                            with open(path, 'rb') as fp:
+                                api_res = recognition_api(fp, api_key="e2a60c10d2155f1df725c594c5605d6d63a2764c")
+
+                            results.append(api_res)
+
+                            time_exec = json.dumps(results[0]["processing_time"], indent=2)
+                            plate_number = json.dumps(results[0]["results"][0]["plate"], indent=2)
+                            boxes = json.dumps(results[0]["results"][0]["box"], indent=2)
+                            boxes = ast.literal_eval(boxes)
+                            c = st.columns(2)
+                            xmin, ymin, xmax, ymax = boxes["xmin"], boxes["ymin"], boxes["xmax"], boxes["ymax"]
+                            source_img = Image.open("./tempDir/input.png").convert("RGBA")
+                            # font_type = ImageFont.truetype("Arial.ttf", 18)
+                            draw = ImageDraw.Draw(source_img)
+                            draw.rectangle(((xmin, ymin), (xmax, ymax)), outline=(0, 255, 0), width=3)
+                            draw.text((xmin - 5, ymin - 10), "Matricule", fill=(0, 255, 0))
+
+                            source_img.save("./tempDir/input.png", "PNG")
+                            im = Image.open("tempDir/input.png")
+                            im = im.resize((300, 400))
+                            c[0].image(im)
+
+                            plate_number = plate_number.replace('"', "")
+                            c[1].subheader("Numero De Matricule:")
+                            c[1].text(plate_number.upper())
+
+                            c[1].subheader("Numero D'Ordre:")
+                            c[1].text(plate_number[:4].upper())
+
+                            c[1].subheader("Code Alpha:")
+                            c[1].text(plate_number[4:6].upper())
+
+                            c[1].subheader("Code Région:")
+                            c[1].text(plate_number[6:].upper())
+                            db = pd.read_csv("datasets.csv")
+                            mats = db["immatriculation"].values
+                            plate_number = plate_number.upper()
+
+                            with st.expander("Additional Informations"):
+                                if plate_number in mats:
+
+                                    st.markdown('___')
+                                    c = st.columns(2)
+                                    c[0].markdown("<h3>Informations Vehicules</h3>", unsafe_allow_html=True)
+                                    c[0].markdown(f"**Genre**: {db[db['immatriculation'] == plate_number]['genre'].values[0]}")
+                                    c[0].markdown(
+                                        f"**Marque**: {db[db['immatriculation'] == plate_number]['marque'].values[0]}")
+
+                                    c[1].markdown("<h3>Informations Proprietaire</h3>", unsafe_allow_html=True)
+                                    c[1].markdown(f"**Nom**: {db[db['immatriculation'] == plate_number]['nom'].values[0]}")
+                                    c[1].markdown(
+                                        f"**Prenom**: {db[db['immatriculation'] == plate_number]['prenom'].values[0]}")
+                                    c[1].markdown(
+                                        f"**Profession**: {db[db['immatriculation'] == plate_number]['profession'].values[0]}")
+                                    c[1].markdown(f"**Ville**: {db[db['immatriculation'] == plate_number]['ville'].values[0]}")
+                                    c[1].markdown(
+                                        f"**Province**: {db[db['immatriculation'] == plate_number]['province'].values[0]}")
+                                    c[1].markdown(
+                                        f"**Adresse**: {db[db['immatriculation'] == plate_number]['adresse'].values[0]}")
+
+                                    st.subheader("")
+                                    c = st.columns(3)
+                                    c[1].markdown("Declarée Predu:")
+                                    if db[db['immatriculation'] == plate_number]['declaration_perte'].values[0] == "OUI":
+                                        c[2].markdown("❌")
+                                    else:
+                                        c[2].markdown("✔️")
+                                    st.markdown('___')
+                                    c = st.columns(3)
+                                    c[0].markdown("<h5>Infos Visite Technique</h5>", unsafe_allow_html=True)
+                                    c[0].markdown(
+                                        f"**Puissance**: {db[db['immatriculation'] == plate_number]['puissance_administrative'].values[0]}")
+                                    c[0].markdown(
+                                        f"**Charge Utile**: {db[db['immatriculation'] == plate_number]['charge_utile'].values[0]}")
+                                    c[0].markdown(f"**PTAC**: {db[db['immatriculation'] == plate_number]['ptac'].values[0]}")
+                                    c[0].markdown(f"**PTRA**: {db[db['immatriculation'] == plate_number]['ptra'].values[0]}")
+                                    c[0].markdown(
+                                        f"**Capacite**: {db[db['immatriculation'] == plate_number]['capacite'].values[0]}")
+
+                                    c[1].markdown("<h5>Infos Assurance</h5>", unsafe_allow_html=True)
+                                    c[1].markdown(
+                                        f"**N° Serie**: {db[db['immatriculation'] == plate_number]['numero_serie'].values[0]}")
+                                    c[1].markdown(
+                                        f"**Carosserie**: {db[db['immatriculation'] == plate_number]['carrosserie'].values[0]}")
+                                    c[1].markdown(f"**Type**: {db[db['immatriculation'] == plate_number]['type'].values[0]}")
+                                    c[1].markdown(
+                                        f"**Modele**: {db[db['immatriculation'] == plate_number]['modele'].values[0]}")
+                                    c[1].markdown(
+                                        f"**Energie**: {db[db['immatriculation'] == plate_number]['energie'].values[0]}")
+
+                                    c[2].markdown("<h5>Infos Permis de Conduite</h5>", unsafe_allow_html=True)
+                                    c[2].markdown(
+                                        f"**Nombre Place**: {db[db['immatriculation'] == plate_number]['nombre_places'].values[0]}")
+                                    c[2].markdown(
+                                        f"**Date M° Circulation**: {db[db['immatriculation'] == plate_number]['date_mise_circulation'].values[0]}")
+                                else:
+                                    st.warning("This Vehicule Not registred!")
+                except:
+                    st.warning("No Car in the Image")
+def log():
+    """Simple Login App"""
+    menu = ["Login", "SignUp"]
     st.sidebar.image("./logos/logo_naana.png")
-    img_file_buffer = st.file_uploader("Image de véhicule", type=["png", "jpg", "jpeg"])
-    if img_file_buffer is not None:
-        file_details = {"FileName": img_file_buffer.name, "FileType": img_file_buffer.type}
+    choice = st.sidebar.selectbox("Menu", menu)
 
-        with open(os.path.join("./tempDir", "input.png"), "wb") as f:
-            f.write(img_file_buffer.getbuffer())
-    c = st.columns(10)
-    test = c[4].button("Detecter")
+    if choice == "Login":
+        username = st.sidebar.text_input("User Name")
+        password = st.sidebar.text_input("Password", type='password')
+        if st.sidebar.checkbox("Login"):
+            # if password == '12345':
+            create_usertable()
+            hashed_pswd = make_hashes(password)
 
-    if test:
-        paths = ["./tempDir/input.png"]
+            result = login_user(username, check_hashes(password, hashed_pswd))
+            if result:
+                main()
+            else:
+                st.warning("Incorrect Username/Password")
 
-        results = []
-        engine_config = {}
+    elif choice == "SignUp":
+        st.subheader("Create New Account")
+        new_user = st.text_input("Username")
+        new_password = st.text_input("Password", type='password')
 
-
-        for path in paths:
-            with open(path, 'rb') as fp:
-                api_res = recognition_api(fp,api_key="e2a60c10d2155f1df725c594c5605d6d63a2764c")
-
-            results.append(api_res)
-            time_exec = json.dumps(results[0]["processing_time"], indent=2)
-            plate_number = json.dumps(results[0]["results"][0]["plate"], indent=2)
-            boxes = json.dumps(results[0]["results"][0]["box"], indent=2)
-            boxes = ast.literal_eval(boxes)
-            c = st.columns(2)
-            xmin,ymin,xmax,ymax = boxes["xmin"],boxes["ymin"],boxes["xmax"],boxes["ymax"]
-            source_img = Image.open("./tempDir/input.png").convert("RGBA")
-            # font_type = ImageFont.truetype("Arial.ttf", 18)
-            draw = ImageDraw.Draw(source_img)
-            draw.rectangle(((xmin, ymin), (xmax, ymax)), outline=(0, 255, 0), width=5)
-            draw.text((xmin - 5, ymin - 10), "Matricule", fill=(0, 255, 0))
-
-            source_img.save("./tempDir/input.png", "PNG")
-            c[0].image("tempDir/input.png",width=300)
-
-            c[1].subheader("Numero De Matricule:")
-            c[1].text(plate_number[1:9].upper())
-
-            c[1].subheader("Numero D'Ordre:")
-            c[1].text(plate_number[1:5].upper())
-
-            c[1].subheader("Code Alpha:")
-            c[1].text(plate_number[5:7].upper())
-
-            c[1].subheader("Code Région:")
-            c[1].text(plate_number[7:9].upper())
+        if st.button("Signup"):
+            create_usertable()
+            add_userdata(new_user, make_hashes(new_password))
+            st.success("You have successfully created a valid Account")
+            st.info("Go to Login Menu to login")
 
 
 if __name__ == '__main__':
-    main()
+    log()

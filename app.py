@@ -271,7 +271,7 @@ def main():
 
                     c[1].subheader("Code Région:")
                     c[1].text(plate_number[6:].upper())
-                    db = pd.read_csv("datasets.csv")
+                    db = pd.read_csv("data.csv")
                     mats = db["immatriculation"].values
                     plate_number = plate_number.upper()
 
@@ -307,22 +307,21 @@ def main():
                             st.markdown('___')
                             c = st.columns(3)
                             c[0].markdown("<h5>Infos Visite Technique</h5>", unsafe_allow_html=True)
-                            c[0].markdown(f"**Puissance**: {db[db['immatriculation'] == plate_number]['puissance_administrative'].values[0]}")
-                            c[0].markdown(f"**Charge Utile**: {db[db['immatriculation'] == plate_number]['charge_utile'].values[0]}")
-                            c[0].markdown(f"**PTAC**: {db[db['immatriculation'] == plate_number]['ptac'].values[0]}")
-                            c[0].markdown(f"**PTRA**: {db[db['immatriculation'] == plate_number]['ptra'].values[0]}")
-                            c[0].markdown(f"**Capacite**: {db[db['immatriculation'] == plate_number]['capacite'].values[0]}")
+                            c[0].markdown(f"**Date Visite**: {db[db['immatriculation'] == plate_number]['date_visite'].values[0]}")
+                            c[0].markdown(f"**Date Expiration**: {db[db['immatriculation'] == plate_number]['date_expiration'].values[0]}")
+
 
                             c[1].markdown("<h5>Infos Assurance</h5>", unsafe_allow_html=True)
-                            c[1].markdown(f"**N° Serie**: {db[db['immatriculation'] == plate_number]['numero_serie'].values[0]}")
-                            c[1].markdown(f"**Carosserie**: {db[db['immatriculation'] == plate_number]['carrosserie'].values[0]}")
-                            c[1].markdown(f"**Type**: {db[db['immatriculation'] == plate_number]['type'].values[0]}")
-                            c[1].markdown(f"**Modele**: {db[db['immatriculation'] == plate_number]['modele'].values[0]}")
-                            c[1].markdown(f"**Energie**: {db[db['immatriculation'] == plate_number]['energie'].values[0]}")
+                            c[1].markdown(f"**Assureur**: {db[db['immatriculation'] == plate_number]['assureur'].values[0]}")
+                            c[1].markdown(f"**Type Assurance**: {db[db['immatriculation'] == plate_number]['type_assurance'].values[0]}")
+                            c[1].markdown(f"**Date Assurance**: {db[db['immatriculation'] == plate_number]['date_assurance'].values[0]}")
+                            c[1].markdown(f"**Date Expiration**: {db[db['immatriculation'] == plate_number]['date_exp_a'].values[0]}")
 
                             c[2].markdown("<h5>Infos Permis de Conduite</h5>", unsafe_allow_html=True)
-                            c[2].markdown(f"**Nombre Place**: {db[db['immatriculation'] == plate_number]['nombre_places'].values[0]}")
-                            c[2].markdown(f"**Date M° Circulation**: {db[db['immatriculation'] == plate_number]['date_mise_circulation'].values[0]}")
+                            c[2].markdown(f"**Numero Permis**: {db[db['immatriculation'] == plate_number]['numero_permis'].values[0]}")
+                            c[2].markdown(f"**Type Permis**: {db[db['immatriculation'] == plate_number]['type_permis'].values[0]}")
+                            c[2].markdown(f"**Date Delivrance**: {db[db['immatriculation'] == plate_number]['date_delivrance'].values[0]}")
+                            c[2].markdown(f"**Lieu Delivrance**: {db[db['immatriculation'] == plate_number]['lieu_delivrance'].values[0]}")
                         else:
                             st.warning("This Vehicule Not registred!")
             except:

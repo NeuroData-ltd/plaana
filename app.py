@@ -6,6 +6,7 @@ import collections
 import ast
 import csv
 import os
+import requests
 import json
 import time
 from collections import OrderedDict
@@ -13,13 +14,14 @@ from pathlib import Path
 import streamlit as st
 from PIL import Image, ImageFont, ImageDraw, ImageEnhance
 
+urlapi = "https://naanapay.com/contrapid/infractions.php"
 
 
 import requests
 import streamlit as st
 import pandas as pd
 from webcam import webcam
-
+import datetime
 # Security
 #passlib,hashlib,bcrypt,scrypt
 import hashlib
@@ -276,9 +278,7 @@ def main():
                     plate_number = plate_number.upper()
 
 
-
-
-                    with st.expander("Additional Informations"):
+                    with st.expander("Information Propriétaire"):
                         if plate_number in mats:
 
                             st.markdown('___')
@@ -322,8 +322,49 @@ def main():
                             c[2].markdown(f"**Type Permis**: {db[db['immatriculation'] == plate_number]['type_permis'].values[0]}")
                             c[2].markdown(f"**Date Delivrance**: {db[db['immatriculation'] == plate_number]['date_delivrance'].values[0]}")
                             c[2].markdown(f"**Lieu Delivrance**: {db[db['immatriculation'] == plate_number]['lieu_delivrance'].values[0]}")
+
                         else:
                             st.warning("This Vehicule Not registred!")
+                    with st.expander("E-Verbalisation"):
+                        with st.form("E-Verbalisation"):
+                            plaque = st.text_input("Plaque immatriculation", plate_number.upper())
+                            namef = st.text_input("Nom fautif", "")
+                            prf = st.text_input("Prenom fautif", "")
+                            phone = st.text_input("Phone", "")
+                            nature = st.text_input("Nature infraction")
+                            lieu = st.text_input("Lieu infraction")
+                            now = datetime.date.today()
+                            date = st.date_input("Date", now)
+                            lieur = st.text_input("Lieu de récupération engin")
+                            namea = st.text_input("Nom agent")
+                            pra = st.text_input("Prenom agent")
+                            def send():
+                                data = {
+                                    "immatriculation": plaque,
+                                    "nom_fautif": namef,
+                                    "phone": phone,
+                                    "prenom_fautif": prf,
+                                    "nature_infraction": nature,
+                                    "lieu_infraction": lieu,
+                                    "date_infraction": str(date),
+                                    "lieu_recuperation": lieur,
+                                    "nom_agent": namea,
+                                    "prenom_agent": pra
+                                }
+                                payload = json.dumps(data)
+                                headers = {
+                                    'Content-Type': 'application/json'
+                                }
+                                response = requests.post(url="https://naanapay.com/contrapid/infractions.php",
+                                                     headers=headers, data=payload)
+
+                            submit = st.form_submit_button(label='Submit',on_click=send())
+
+
+
+
+
+
             except:
                 st.warning("Retry...")
     else:
@@ -382,7 +423,7 @@ def main():
                             mats = db["immatriculation"].values
                             plate_number = plate_number.upper()
 
-                            with st.expander("Additional Informations"):
+                            with st.expander("Information Propriétaire"):
                                 if plate_number in mats:
 
                                     st.markdown('___')
@@ -441,6 +482,44 @@ def main():
                                         f"**Date M° Circulation**: {db[db['immatriculation'] == plate_number]['date_mise_circulation'].values[0]}")
                                 else:
                                     st.warning("This Vehicule Not registred!")
+                            with st.expander("E-Verbalisation"):
+                                with st.form("E-Verbalisation"):
+                                    plaque = st.text_input("Plaque immatriculation", plate_number.upper())
+                                    namef = st.text_input("Nom fautif", "")
+                                    prf = st.text_input("Prenom fautif", "")
+                                    phone = st.text_input("Phone", "")
+                                    nature = st.text_input("Nature infraction")
+                                    lieu = st.text_input("Lieu infraction")
+                                    now = datetime.date.today()
+                                    date = st.date_input("Date", now)
+                                    lieur = st.text_input("Lieu de récupération engin")
+                                    namea = st.text_input("Nom agent")
+                                    pra = st.text_input("Prenom agent")
+
+                                    def send():
+                                        data = {
+                                            "immatriculation": plaque,
+                                            "nom_fautif": namef,
+                                            "phone": phone,
+                                            "prenom_fautif": prf,
+                                            "nature_infraction": nature,
+                                            "lieu_infraction": lieu,
+                                            "date_infraction": str(date),
+                                            "lieu_recuperation": lieur,
+                                            "nom_agent": namea,
+                                            "prenom_agent": pra
+                                        }
+                                        payload = json.dumps(data)
+                                        headers = {
+                                            'Content-Type': 'application/json'
+                                        }
+                                        response = requests.post(url="https://naanapay.com/contrapid/infractions.php",
+                                                                 headers=headers, data=payload)
+
+
+                                    submit = st.form_submit_button(label='Submit', on_click=send())
+
+
                 except:
                     st.warning("No Car in the Image")
 def log():

@@ -7,3 +7,4 @@ datetime
 collection
 pysqlite3 
 click==8.0.4
+streamlit-webcam-example

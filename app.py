@@ -40,7 +40,7 @@ def check_hashes(password, hashed_text):
 # DB Management
 import mysql.connector
 
-conn = mysql.connector.connect(host='91.234.194.113', database='cp1425760p08_contrapid', user='cp1425760p08_contrapid',
+conn = mysql.connector.connect(host='localhost', database='cp1425760p08_contrapid', user='cp1425760p08_contrapid',
                                password='02MNeJXVsao+')
 c = conn.cursor()
 

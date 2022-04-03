@@ -40,8 +40,10 @@ def check_hashes(password, hashed_text):
 # DB Management
 import mysql.connector
 
-conn = mysql.connector.connect(host='91.234.194.113', database='cp1425760p08_contrapid', user='cp1425760p08_contrapid',
-                               password='02MNeJXVsao+')
+conn = mysql.connector.connect(host='sql6.freesqldatabase.com',
+                                         database='sql6483132',
+                                         user='sql6483132',
+                                         password='KiuByTAqMe')
 c = conn.cursor()
 
 
@@ -225,10 +227,10 @@ Enable Make Model and Color prediction: plate_recognition.py -a MY_API_KEY --mmc
 
 
 def datasets(plate_number):
-    connection = mysql.connector.connect(host='91.234.194.113',
-                                         database='cp1425760p08_contrapid',
-                                         user='cp1425760p08_contrapid',
-                                         password='02MNeJXVsao+')
+    connection = mysql.connector.connect(host='sql6.freesqldatabase.com',
+                                         database='sql6483132',
+                                         user='sql6483132',
+                                         password='KiuByTAqMe')
     if connection.is_connected():
         db_Info = connection.get_server_info()
         cursor = connection.cursor()
